@@ -1,0 +1,44 @@
+# --- Secrets et configuration locale : ne jamais versionner ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+secrets/
+
+# --- Java / Maven / Gradle ---
+target/
+build/
+.gradle/
+*.class
+*.jar
+*.war
+!gradle/wrapper/gradle-wrapper.jar
+!.mvn/wrapper/maven-wrapper.jar
+hs_err_pid*
+
+# --- Node / Angular ---
+node_modules/
+dist/
+.angular/
+coverage/
+npm-debug.log*
+yarn-error.log*
+
+# --- Journaux, bases locales et dumps ---
+*.log
+logs/
+*.dump
+*.sql.gz
+*.sqlite
+*.db
+
+# --- IDE et système ---
+.idea/
+*.iml
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
