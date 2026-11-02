@@ -26,13 +26,14 @@ La **page de connexion vit dans ce dépôt** (décision **D-040**), aux couleurs
 | Algorithme | RS256 |
 | Type de client | **public**, sans secret, **PKCE obligatoire** (une application web ne peut pas garder de secret) |
 
-Trois points à connaître avant d'implémenter votre validation :
+Quatre règles à connaître avant d'implémenter votre validation (décisions du 02/11/2026) :
 
-1. **Les rôles sont dans le jeton d'accès, pas dans l'`id_token`** (claim `roles`, sans préfixe `ROLE_`). Si votre front les lit via `getIdentityClaims()` d'`angular-oauth2-oidc`, il ne trouvera rien : le jeton est valide, le claim est ailleurs.
-2. **L'audience d'un jeton d'accès vaut le `client_id` du produit qui l'a demandé.** Un jeton obtenu par le Portail ne peut donc pas servir à appeler votre API si vous validez `aud`. La règle d'appel entre produits **n'est pas encore arrêtée** — elle est en cours d'arbitrage dans [BSF-11](https://bschool.atlassian.net/browse/BSF-11) et ADR-003. N'implémentez pas votre propre convention avant cette décision.
-3. **Le claim `sub` n'est pas encore stable** : il vaut aujourd'hui l'identifiant de connexion et devra valoir l'**UUID v4** de l'utilisateur. Ne le stockez pas comme clé étrangère avant que le contrat soit publié.
+1. **Ne vérifiez pas l'audience (`aud`)** (D-042). Acceptez tout jeton d'accès émis par `bsf-auth` dont la **signature** (JWKS), l'**émetteur** (`iss`) et l'**expiration** sont valides, puis décidez des droits à partir du claim `roles`. Un même jeton sert ainsi pour les trois produits : le Portail appelle votre API avec son propre jeton.
+2. **Autorisez à partir du jeton d'accès** : il porte le claim `roles` (sans préfixe `ROLE_`). L'`id_token` portera aussi `roles` (D-043), mais seulement pour l'affichage côté front (montrer ou masquer un bouton). ⚠️ **Le prototype ne le fait pas encore** : il est prévu dans [BSF-11](https://bschool.atlassian.net/browse/BSF-11). D'ici là, `getIdentityClaims()` d'`angular-oauth2-oidc` ne trouve aucun rôle.
+3. **La seule façon de se connecter est le flux OIDC** (code d'autorisation + PKCE, redirection vers la page de `bsf-auth`). Il n'existe pas d'endpoint qui reçoive un mot de passe en JSON (D-044). L'autorisation doit être lancée par une **navigation** du navigateur, jamais par un appel AJAX.
+4. **Le claim `sub` n'est pas encore stable** : il vaut aujourd'hui l'identifiant de connexion et devra valoir l'**UUID v4** de l'utilisateur. Ne le stockez pas comme clé étrangère avant que le contrat soit publié.
 
-Le **contrat OpenAPI** de ce service est publié dans [`bsf-contracts`](https://github.com/AsKing07/bsf-contracts), pas ici. Il fait foi sur tout ce qui précède ; ce tableau en est un résumé de courtoisie.
+Le **contrat OpenAPI** de ce service sera publié dans [`bsf-contracts`](https://github.com/AsKing07/bsf-contracts), pas ici ([BSF-11](https://bschool.atlassian.net/browse/BSF-11)). Une fois publié, c'est lui qui fera foi ; ce tableau n'en est qu'un résumé.
 
 ## Contenu du dépôt
 
@@ -79,6 +80,7 @@ Les variables d'environnement visées par le service sont listées dans [`.env.e
 | **HTTP**, pas HTTPS | Valable en local seulement. Hors local : ADR-006 |
 | Ni **client Angular**, ni vrai navigateur | CORS, `angular-oauth2-oidc` et la page `/callback` restent à éprouver ([BSF-10](https://bschool.atlassian.net/browse/BSF-10)) |
 | Pas de **jetons de rafraîchissement**, pas de **déconnexion** | À décider dans ADR-003 ([BSF-54](https://bschool.atlassian.net/browse/BSF-54)) |
+| `roles` **absent de l'`id_token`** | Prévu par D-043, dans [BSF-11](https://bschool.atlassian.net/browse/BSF-11) |
 
 Les versions retenues par le prototype — Spring Boot 4.1.2, Spring Authorization Server via Spring Security 7 — **ne préjugent pas d'ADR-002** ([BSF-44](https://bschool.atlassian.net/browse/BSF-44)). Elles en sont une donnée d'entrée : le prototype montre que cette combinaison répond à notre besoin.
 
